@@ -1,0 +1,169 @@
+-- ============================================================
+-- PROJETO: BIBLIOTECA
+-- BANCO DE DADOS: Sistema de Biblioteca em MySQL
+-- COMO USAR: Abra no MySQL Workbench e rode tudo com Ctrl + Shift + Enter
+--            ou rode por partes com Ctrl + Enter
+-- ============================================================
+
+-- PARTE 1 - CRIAR O BANCO
+CREATE DATABASE IF NOT EXISTS BIBLIOTECA;
+USE BIBLIOTECA;
+
+-- ============================================================
+-- PARTE 2 - CRIAR AS TABELAS
+-- ============================================================
+
+-- TABELA: CATEGORIAS
+-- O QUE FAZ: Organiza os livros por assunto
+-- EXEMPLO: Romance, Terror, Técnico
+CREATE TABLE CATEGORIAS (
+    ID_CATEGORIA INT PRIMARY KEY AUTO_INCREMENT,
+    NOME_CATEGORIA VARCHAR(100) NOT NULL
+);
+
+-- TABELA: AUTORES
+-- O QUE FAZ: Cadastra os autores dos livros
+CREATE TABLE AUTORES (
+    ID_AUTOR INT PRIMARY KEY AUTO_INCREMENT,
+    NOME_AUTOR VARCHAR(100) NOT NULL
+);
+
+-- TABELA: LIVROS
+-- O QUE FAZ: Cadastra os livros da biblioteca
+-- LIGAÇÃO: Tem ligação com CATEGORIAS e AUTORES
+CREATE TABLE LIVROS (
+    ID_LIVRO INT PRIMARY KEY AUTO_INCREMENT,
+    TITULO VARCHAR(150) NOT NULL,
+    ANO_PUBLICACAO INT,
+    FK_ID_CATEGORIA INT,
+    FK_ID_AUTOR INT,
+    FOREIGN KEY (FK_ID_CATEGORIA) REFERENCES CATEGORIAS(ID_CATEGORIA),
+    FOREIGN KEY (FK_ID_AUTOR) REFERENCES AUTORES(ID_AUTOR)
+);
+
+-- TABELA: LEITORES
+-- O QUE FAZ: Cadastra quem pega livro emprestado
+CREATE TABLE LEITORES (
+    ID_LEITOR INT PRIMARY KEY AUTO_INCREMENT,
+    NOME_LEITOR VARCHAR(100) NOT NULL
+);
+
+-- TABELA: FUNCIONARIOS
+-- O QUE FAZ: Cadastra quem atende na biblioteca
+CREATE TABLE FUNCIONARIOS (
+    ID_FUNCIONARIO INT PRIMARY KEY AUTO_INCREMENT,
+    NOME_FUNCIONARIO VARCHAR(100) NOT NULL
+);
+
+-- TABELA: EMPRESTIMOS
+-- O QUE FAZ: Registra qual livro foi emprestado, para quem e por quem
+-- LIGAÇÃO: Tem ligação com LIVROS, LEITORES e FUNCIONARIOS
+CREATE TABLE EMPRESTIMOS (
+    ID_EMPRESTIMO INT PRIMARY KEY AUTO_INCREMENT,
+    DATA_EMPRESTIMO DATE NOT NULL,
+    DATA_DEVOLUCAO DATE,
+    FK_ID_LIVRO INT,
+    FK_ID_LEITOR INT,
+    FK_ID_FUNCIONARIO INT,
+    FOREIGN KEY (FK_ID_LIVRO) REFERENCES LIVROS(ID_LIVRO),
+    FOREIGN KEY (FK_ID_LEITOR) REFERENCES LEITORES(ID_LEITOR),
+    FOREIGN KEY (FK_ID_FUNCIONARIO) REFERENCES FUNCIONARIOS(ID_FUNCIONARIO)
+);
+
+-- TABELA: MULTAS
+-- O QUE FAZ: Registra multa quando o leitor atrasa a devolução
+-- LIGAÇÃO: Tem ligação com EMPRESTIMOS
+CREATE TABLE MULTAS (
+    ID_MULTA INT PRIMARY KEY AUTO_INCREMENT,
+    VALOR_MULTA DECIMAL(10,2) NOT NULL,
+    DATA_MULTA DATE,
+    FK_ID_EMPRESTIMO INT,
+    FOREIGN KEY (FK_ID_EMPRESTIMO) REFERENCES EMPRESTIMOS(ID_EMPRESTIMO)
+);
+
+-- ============================================================
+-- PARTE 3 - INSERIR DADOS DE EXEMPLO
+-- ============================================================
+
+-- CATEGORIAS
+INSERT INTO CATEGORIAS (NOME_CATEGORIA) VALUES
+('Romance'),
+('Terror'),
+('Técnico'),
+('Ficção');
+
+-- AUTORES
+INSERT INTO AUTORES (NOME_AUTOR) VALUES
+('Machado de Assis'),
+('Stephen King'),
+('Clarice Lispector');
+
+-- LIVROS
+INSERT INTO LIVROS (TITULO, ANO_PUBLICACAO, FK_ID_CATEGORIA, FK_ID_AUTOR) VALUES
+('Dom Casmurro', 1899, 1, 1),
+('It - A Coisa', 1986, 2, 2),
+('A Hora da Estrela', 1977, 1, 3);
+
+-- LEITORES
+INSERT INTO LEITORES (NOME_LEITOR) VALUES
+('Maria Silva'),
+('João Santos');
+
+-- FUNCIONARIOS
+INSERT INTO FUNCIONARIOS (NOME_FUNCIONARIO) VALUES
+('Ana Souza'),
+('Pedro Lima');
+
+-- EMPRESTIMOS
+INSERT INTO EMPRESTIMOS (DATA_EMPRESTIMO, DATA_DEVOLUCAO, FK_ID_LIVRO, FK_ID_LEITOR, FK_ID_FUNCIONARIO) VALUES
+('2026-11-10', '2026-11-17', 1, 1, 1),
+('2026-11-11', '2026-11-18', 2, 2, 2);
+
+-- MULTAS
+INSERT INTO MULTAS (VALOR_MULTA, DATA_MULTA, FK_ID_EMPRESTIMO) VALUES
+(5.00, '2026-11-18', 1);
+
+-- ============================================================
+-- PARTE 4 - CONSULTAS PARA TESTAR
+-- ============================================================
+
+-- 1 - Ver todos os livros
+SELECT * FROM LIVROS;
+
+-- 2 - Ver título e ano dos livros
+SELECT TITULO, ANO_PUBLICACAO FROM LIVROS;
+
+-- 3 - Ver todos os leitores
+SELECT * FROM LEITORES;
+
+-- 4 - Ver todos os funcionários
+SELECT * FROM FUNCIONARIOS;
+
+-- 5 - Categorias sem repetir
+SELECT DISTINCT NOME_CATEGORIA FROM CATEGORIAS;
+
+-- 6 - Livro + Categoria + Autor
+SELECT
+    L.TITULO AS LIVRO,
+    C.NOME_CATEGORIA AS CATEGORIA,
+    A.NOME_AUTOR AS AUTOR
+FROM LIVROS L
+JOIN CATEGORIAS C ON L.FK_ID_CATEGORIA = C.ID_CATEGORIA
+JOIN AUTORES A ON L.FK_ID_AUTOR = A.ID_AUTOR;
+
+-- 7 - Empréstimo + Livro + Leitor + Funcionário
+SELECT
+    E.DATA_EMPRESTIMO,
+    L.TITULO AS LIVRO,
+    LE.NOME_LEITOR AS LEITOR,
+    F.NOME_FUNCIONARIO AS ATENDENTE
+FROM EMPRESTIMOS E
+JOIN LIVROS L ON E.FK_ID_LIVRO = L.ID_LIVRO
+JOIN LEITORES LE ON E.FK_ID_LEITOR = LE.ID_LEITOR
+JOIN FUNCIONARIOS F ON E.FK_ID_FUNCIONARIO = F.ID_FUNCIONARIO;
+
+-- 8 - Livros que já foram emprestados
+SELECT * FROM LIVROS
+WHERE ID_LIVRO IN (SELECT FK_ID_LIVRO FROM EMPRESTIMOS);
+
+-- Fim do script BIBLIOTECA
